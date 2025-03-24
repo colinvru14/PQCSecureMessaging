@@ -1,0 +1,15 @@
+# Ignore object files
+*.o
+
+# Ignore executable files
+# For Unix-like systems (files without extension)
+*
+!*/
+!*.*
+
+# For Windows
+*.exe
+*.out
+
+# Ignore VS Code settings directory
+.vscode/
