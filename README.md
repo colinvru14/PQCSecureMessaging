@@ -14,14 +14,15 @@ View the full project proposal document [here](https://docs.google.com/document/
 View the project proposal presentation [here](https://docs.google.com/presentation/d/1D6lXlrNmAlTrDZ5bIkgARoAYa_UiUUkckiq1XTKNOvQ/edit?usp=drive_link) 
 
 ## Using The Traditional Cryptography Messaging App
-We have created two real-time messaging apps, the main one utilizes PQC algorithms to protect against quantum computer attacks, and the other uses traditional encryption algorithms (RSA and AES). This more basic program is used as a benchmark so we can test our PQC app against technology that has been implemented in real-world applications.
+We have created two real-time messaging apps, the main one utilizes PQC algorithms to protect against quantum computer attacks, and the other uses traditional encryption algorithms (RSA). This more basic program is used as a benchmark so we can test our PQC app against technology that has been implemented in real-world applications.
 
 To test the traditional cryptography messaging app:
 1. Clone this repository
-2. Navigate to `src/traditional`
-3. In one terminal, run `make receiver`
-   - This should generate a public key and private key for the key exchange so that the message is able to be encrypted, and subsequently decrypted by the receiver, and the receiver should now be waiting for the sender on port 8080
-4. In another terminal, run `make sender`
-     - This will connect to the receiver at the specified port, and prompt you to enter a message to send the to the receiver, which the program will encrypt before sending
-5. Once a message has been sent from the sender, the receiver will decrypt it and print it to the terminal to show the original plaintext. 
-6. The program will continue to prompt for a message on the sender's side until the keyword 'quit' is used to end the process, at which point, the receiver will detect that the sender is no long connected and will end it's own process
+2. Open QNX Momentics
+3. Build the project with the hammer icon in the top right (this should raise two warnings which you can ignore, but should also create two binary files)
+4. Run the `receiver` binary file as a QNX Application
+5. Run the `sender` binary file as a QNX Application. The receiver should say it connected to the sender
+6. Switch to the sender console, and enter a message to send to the receiver. This will encrypt the message and send
+7. Switch to the receiver console, and you can observe that it decrypted the message and you can see the original plaintext
+
+[Video Explanation](https://drive.google.com/file/d/1uPVCcjNTHvR51fxKOBZVn2DErSPSGNBk/view?usp=drive_link)

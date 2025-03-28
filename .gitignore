@@ -1,15 +1,8 @@
-# Ignore object files
-*.o
+# Ignore anything pertaining to vscode
+/.vscode
 
-# Ignore executable files
-# For Unix-like systems (files without extension)
-*
-!*/
-!*.*
+# Ignore all executables
+/bin
 
-# For Windows
-*.exe
-*.out
-
-# Ignore VS Code settings directory
-.vscode/
+# Ignore all object files
+/build
