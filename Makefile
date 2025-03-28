@@ -1,71 +1,44 @@
-ARTIFACT = PQCMessaging
+DEBUG = -g
+CC = qcc
+LD = qcc
 
-#Build architecture/variant string, possible values: x86, armv7le, etc...
-PLATFORM ?= x86_64
+TARGET = -Vgcc_ntox86_64
+#TARGET = -Vgcc_ntoaarch64le  # Comment out or switch as needed
 
-#Build profile, possible values: release, debug, profile, coverage
-BUILD_PROFILE ?= debug
+# Include directories
+INCDIR = include
+COMMONDIR = common
+CFLAGS += $(DEBUG) $(TARGET) -Wall -I$(INCDIR) -I$(COMMONDIR)
 
-CONFIG_NAME ?= $(PLATFORM)-$(BUILD_PROFILE)
-OUTPUT_DIR = build/$(CONFIG_NAME)
-TARGET = $(OUTPUT_DIR)/$(ARTIFACT)
+# Library directory and linking flags
+LIBDIR = lib/x86_64
+COMMON_OBJS = common/randombytes.o common/sha2.o common/aes.o common/fips202.o common/sp800-185.o
+LDFLAGS += $(DEBUG) $(TARGET) -L$(LIBDIR) -lml-kem-512_clean -lml-dsa-44_clean
 
-#Compiler definitions
+BINS = PQCMessaging
 
-CC = qcc -Vgcc_nto$(PLATFORM)
-CXX = q++ -Vgcc_nto$(PLATFORM)_cxx
-LD = $(CC)
+all: $(BINS)
 
-#User defined include/preprocessor flags and libraries
+# Compile common objects
+common/randombytes.o: common/randombytes.c common/randombytes.h
+	$(CC) $(CFLAGS) -c common/randombytes.c -o common/randombytes.o
 
-#INCLUDES += -I/path/to/my/lib/include
-#INCLUDES += -I../mylib/public
+common/sha2.o: common/sha2.c common/sha2.h
+	$(CC) $(CFLAGS) -c common/sha2.c -o common/sha2.o
 
-#LIBS += -L/path/to/my/lib/$(PLATFORM)/usr/lib -lmylib
-#LIBS += -L../mylib/$(OUTPUT_DIR) -lmylib
+common/aes.o: common/aes.c common/aes.h
+	$(CC) $(CFLAGS) -c common/aes.c -o common/aes.o
 
-#Compiler flags for build profiles
-CCFLAGS_release += -O2
-CCFLAGS_debug += -g -O0 -fno-builtin
-CCFLAGS_coverage += -g -O0 -ftest-coverage -fprofile-arcs -nopipe -Wc,-auxbase-strip,$@
-LDFLAGS_coverage += -ftest-coverage -fprofile-arcs
-CCFLAGS_profile += -g -O0 -finstrument-functions
-LIBS_profile += -lprofilingS
+common/fips202.o: common/fips202.c common/fips202.h
+	$(CC) $(CFLAGS) -c common/fips202.c -o common/fips202.o
 
-#Generic compiler flags (which include build type flags)
-CCFLAGS_all += -Wall -fmessage-length=0
-CCFLAGS_all += $(CCFLAGS_$(BUILD_PROFILE))
-#Shared library has to be compiled with -fPIC
-#CCFLAGS_all += -fPIC
-LDFLAGS_all += $(LDFLAGS_$(BUILD_PROFILE))
-LIBS_all += $(LIBS_$(BUILD_PROFILE))
-DEPS = -Wp,-MMD,$(@:%.o=%.d),-MT,$@
+common/sp800-185.o: common/sp800-185.c common/sp800-185.h
+	$(CC) $(CFLAGS) -c common/sp800-185.c -o common/sp800-185.o
 
-#Macro to expand files recursively: parameters $1 -  directory, $2 - extension, i.e. cpp
-rwildcard = $(wildcard $(addprefix $1/*.,$2)) $(foreach d,$(wildcard $1/*),$(call rwildcard,$d,$2))
-
-#Source list
-SRCS = $(call rwildcard, src, c)
-
-#Object files list
-OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(basename $(SRCS))))
-
-#Compiling rule
-$(OUTPUT_DIR)/%.o: %.c
-	@mkdir -p $(dir $@)
-	$(CC) -c $(DEPS) -o $@ $(INCLUDES) $(CCFLAGS_all) $(CCFLAGS) $<
-
-#Linking rule
-$(TARGET):$(OBJS)
-	$(LD) -o $(TARGET) $(LDFLAGS_all) $(LDFLAGS) $(OBJS) $(LIBS_all) $(LIBS)
-
-#Rules section for default compilation and linking
-all: $(TARGET)
+PQCMessaging: src/PQCMessaging.c $(COMMON_OBJS)
+	$(CC) $(CFLAGS) -o build/PQCMessaging src/PQCMessaging.c $(COMMON_OBJS) $(LDFLAGS)
 
 clean:
-	rm -fr $(OUTPUT_DIR)
+	rm -rf build/$(BINS) build/*.o
 
-rebuild: clean all
-
-#Inclusion of dependencies (object files to source and includes)
--include $(OBJS:%.o=%.d)
+.PHONY: all clean
