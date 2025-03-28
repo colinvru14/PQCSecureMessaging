@@ -1,71 +1,52 @@
-ARTIFACT = PQCMessaging
+# Makefile for RSA key exchange program
 
-#Build architecture/variant string, possible values: x86, armv7le, etc...
-PLATFORM ?= x86_64
+# Compiler and flags
+CC = qcc
+CFLAGS = -Wall -Wextra -g
+LDFLAGS = -lssl -lcrypto -lsocket
 
-#Build profile, possible values: release, debug, profile, coverage
-BUILD_PROFILE ?= debug
+# Directories
+BUILD_DIR = build
+BIN_DIR = bin
 
-CONFIG_NAME ?= $(PLATFORM)-$(BUILD_PROFILE)
-OUTPUT_DIR = build/$(CONFIG_NAME)
-TARGET = $(OUTPUT_DIR)/$(ARTIFACT)
+# Object files
+OBJ_SENDER = $(BUILD_DIR)/sender.o
+OBJ_RECEIVER = $(BUILD_DIR)/receiver.o
+TARGET_SENDER = $(BIN_DIR)/sender
+TARGET_RECEIVER = $(BIN_DIR)/receiver
 
-#Compiler definitions
+# Default target
+all: $(TARGET_SENDER) $(TARGET_RECEIVER)
 
-CC = qcc -Vgcc_nto$(PLATFORM)
-CXX = q++ -Vgcc_nto$(PLATFORM)_cxx
-LD = $(CC)
+# Create directories if they don't exist
+$(BUILD_DIR) $(BIN_DIR):
+	mkdir -p $@
 
-#User defined include/preprocessor flags and libraries
+# Compile source for sender and receiver
+$(OBJ_SENDER): src/traditional/sender.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -DSENDER -c $< -o $@
 
-#INCLUDES += -I/path/to/my/lib/include
-#INCLUDES += -I../mylib/public
+$(OBJ_RECEIVER): src/traditional/receiver.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -DRECEIVER -c $< -o $@
 
-#LIBS += -L/path/to/my/lib/$(PLATFORM)/usr/lib -lmylib
-#LIBS += -L../mylib/$(OUTPUT_DIR) -lmylib
+# Link object files to create sender and receiver executables
+$(TARGET_SENDER): $(OBJ_SENDER) | $(BIN_DIR)
+	$(CC) $(OBJ_SENDER) $(LDFLAGS) -o $@
 
-#Compiler flags for build profiles
-CCFLAGS_release += -O2
-CCFLAGS_debug += -g -O0 -fno-builtin
-CCFLAGS_coverage += -g -O0 -ftest-coverage -fprofile-arcs -nopipe -Wc,-auxbase-strip,$@
-LDFLAGS_coverage += -ftest-coverage -fprofile-arcs
-CCFLAGS_profile += -g -O0 -finstrument-functions
-LIBS_profile += -lprofilingS
+$(TARGET_RECEIVER): $(OBJ_RECEIVER) | $(BIN_DIR)
+	$(CC) $(OBJ_RECEIVER) $(LDFLAGS) -o $@
 
-#Generic compiler flags (which include build type flags)
-CCFLAGS_all += -Wall -fmessage-length=0
-CCFLAGS_all += $(CCFLAGS_$(BUILD_PROFILE))
-#Shared library has to be compiled with -fPIC
-#CCFLAGS_all += -fPIC
-LDFLAGS_all += $(LDFLAGS_$(BUILD_PROFILE))
-LIBS_all += $(LIBS_$(BUILD_PROFILE))
-DEPS = -Wp,-MMD,$(@:%.o=%.d),-MT,$@
+# Run as receiver
+receiver: $(TARGET_RECEIVER)
+	./$(TARGET_RECEIVER)
 
-#Macro to expand files recursively: parameters $1 -  directory, $2 - extension, i.e. cpp
-rwildcard = $(wildcard $(addprefix $1/*.,$2)) $(foreach d,$(wildcard $1/*),$(call rwildcard,$d,$2))
+# Run as sender
+sender: $(TARGET_SENDER)
+	./$(TARGET_SENDER)
 
-#Source list
-SRCS = $(call rwildcard, src, c)
-
-#Object files list
-OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(basename $(SRCS))))
-
-#Compiling rule
-$(OUTPUT_DIR)/%.o: %.c
-	@mkdir -p $(dir $@)
-	$(CC) -c $(DEPS) -o $@ $(INCLUDES) $(CCFLAGS_all) $(CCFLAGS) $<
-
-#Linking rule
-$(TARGET):$(OBJS)
-	$(LD) -o $(TARGET) $(LDFLAGS_all) $(LDFLAGS) $(OBJS) $(LIBS_all) $(LIBS)
-
-#Rules section for default compilation and linking
-all: $(TARGET)
-
+# Clean build files
 clean:
-	rm -fr $(OUTPUT_DIR)
+	rm -rf $(BUILD_DIR) $(BIN_DIR)
 
-rebuild: clean all
-
-#Inclusion of dependencies (object files to source and includes)
--include $(OBJS:%.o=%.d)
+# Phony targets
+.PHONY: all clean receiver sender
