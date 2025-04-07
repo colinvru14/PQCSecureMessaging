@@ -70,7 +70,7 @@ int sign_message(RSA *keypair, const unsigned char *msg, unsigned int msg_len, u
 }
 
 // Function to log timing information
-void log_timing(const char* message, long long time_taken_ns) {
+void log_timing(long long time_taken_ns) {
     FILE *log_file = fopen(LOG_FILE, "a");
     if (log_file == NULL) {
         perror("Failed to open log file");
@@ -138,7 +138,7 @@ void sender_process() {
     }
 
     // Loop to keep sending messages
-    for (int y = 0; y < 25; y++) {
+    while (1) {
         // Get message to encrypt
         char msg[KEY_LENGTH/8];
         printf("[SENDER] Enter message to encrypt and send (or 'quit' to exit): ");
@@ -147,10 +147,8 @@ void sender_process() {
         struct timespec start, end;
         clock_gettime(CLOCK_MONOTONIC, &start);
 
-        // fgets(msg, KEY_LENGTH/8 - 1, stdin);
-        // msg[strlen(msg)-1] = '\0';  // Remove newline
-
-        strcpy(msg, "Testing");
+        fgets(msg, KEY_LENGTH/8 - 1, stdin);
+        msg[strlen(msg)-1] = '\0';
         
         if (strcmp(msg, "quit") == 0) {
             printf("[SENDER] Exiting...\n");
@@ -177,6 +175,13 @@ void sender_process() {
             continue;
         }
 
+        // End timing
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        long long time_taken_ns = (end.tv_sec - start.tv_sec) * 1000000000LL +
+                                (end.tv_nsec - start.tv_nsec);
+        // Log timing information
+        log_timing(time_taken_ns);
+
         // Send encrypted message
         send(sockfd, encrypted, encrypt_len, 0);
         printf("[SENDER] Encrypted message sent.\n");
@@ -191,22 +196,18 @@ void sender_process() {
         // Wait for acknowledgment from receiver
         char ack[4] = {0};
         int ack_bytes = recv(sockfd, ack, 3, 0);
-
-        // End timing
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        long long time_taken_ns = (end.tv_sec - start.tv_sec) * 1000000000LL +
-                                (end.tv_nsec - start.tv_nsec);
+        if (ack_bytes > 0) {
+            ack[ack_bytes] = '\0';
+        }
 
         if (ack_bytes > 0 && strcmp(ack, "ACK") == 0) {
             printf("[SENDER] Received acknowledgment from receiver.\n");
-            // Log timing information
-            log_timing(msg, time_taken_ns);
         } else {
             printf("[SENDER] Error: Did not receive acknowledgment from receiver.\n");
             break;
         }
 
-        for (int i = 0; i < 0; i++) {}
+        for(int i = 0; i < 0; i++) {}
         printf("\n");
 
         free(encrypted);

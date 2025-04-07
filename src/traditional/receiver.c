@@ -9,11 +9,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 #define KEY_LENGTH  2048
 #define PUB_EXP     3
 #define PORT        9090
 #define BUFFER_SIZE 4096
+#define LOG_FILE    "receiver_timing.log"
 
 // Error handling function
 void handle_errors() {
@@ -47,6 +49,23 @@ char* get_public_key_PEM(RSA *keypair, size_t *len) {
 
     BIO_free(pub);
     return pub_key;
+}
+
+// Function to log timing information
+void log_timing(long long time_taken_ns) {
+    FILE *log_file = fopen(LOG_FILE, "a");
+    if (log_file == NULL) {
+        perror("Failed to open log file");
+        return;
+    }
+
+    time_t now;
+    time(&now);
+    char timestamp[30];
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", localtime(&now));
+
+    fprintf(log_file, "%lld\n",time_taken_ns);
+    fclose(log_file);
 }
 
 // Receiver process function
@@ -139,6 +158,10 @@ void receiver_process() {
         int sig_len = recv(new_socket, signature, siglen, 0);
         if (sig_len <= 0) break;
 
+        // Start timing
+        struct timespec start, end;
+        clock_gettime(CLOCK_MONOTONIC, &start);
+
         // Decrypt message
         char decrypted[BUFFER_SIZE];
         int decrypt_len = RSA_private_decrypt(bytes_received, (unsigned char*)encrypted, (unsigned char*)decrypted, keypair, RSA_PKCS1_OAEP_PADDING);
@@ -154,6 +177,13 @@ void receiver_process() {
         } else {
             printf("[RECEIVER] Signature verification failed. Message may be tampered!\n");
         }
+
+        // End timing
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        long long time_taken_ns = (end.tv_sec - start.tv_sec) * 1000000000LL +
+                                (end.tv_nsec - start.tv_nsec);
+        // Log timing information
+        log_timing(time_taken_ns);
 
         // Send acknowledgment to sender
         const char *ack = "ACK";
