@@ -1,0 +1,8 @@
+# Ignore anything pertaining to vscode
+/.vscode
+
+# Ignore all executables
+/bin
+
+# Ignore all object files
+/build
