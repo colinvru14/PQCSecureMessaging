@@ -6,3 +6,20 @@
 
 # Ignore all object files
 /build
+
+# macOS System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear on external drives
+.Spotlight-V100/
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Other macOS files
+__MACOSX/
